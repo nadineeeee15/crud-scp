@@ -437,3 +437,45 @@
     max-height: 220px;
   }
 }
+
+.scp-nav-arrows {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.scp-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(0,240,255,0.35);
+  color: #00f0ff;
+  cursor: pointer;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 0.8rem;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  text-transform: uppercase;
+}
+
+.scp-nav-btn:hover {
+  background: rgba(0,240,255,0.1);
+  border-color: rgba(0,240,255,0.7);
+  box-shadow: 0 0 12px rgba(0,240,255,0.2);
+  transform: translateY(-2px);
+}
+
+.arrow-icon { font-size: 1rem; }
+.arrow-label { font-size: 0.6rem; opacity: 0.8; }
+
+@media (max-width: 768px) {
+  .scp-nav-arrows { bottom: 1rem; right: 1rem; }
+  .arrow-label { display: none; }
+  .scp-nav-btn { padding: 0.5rem 0.7rem; }
+}

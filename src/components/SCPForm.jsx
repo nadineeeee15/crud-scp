@@ -1,11 +1,17 @@
+// SCPForm.jsx
+// A reusable modal form component that handles both Create and Update operations.
+// When the existingSCP prop is passed, the form pre-fills all fields for editing.
+// When no existingSCP prop is passed, the form renders as an empty Add New SCP form.
+// Communicates directly with the Supabase REST API for insert and update operations.
+
 import { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient'; // Supabase client for REST API calls
 import './SCPForm.css';
 
-// SCPForm handles both Create and Update operations
-// When existingSCP prop is passed the form pre-fills for editing
-// When no prop is passed the form is used for creating a new SCP
 function SCPForm({ existingSCP, onSuccess, onCancel }) {
+
+  // Initialises form state — pre-fills fields if editing an existing SCP
+  // Uses optional chaining (?.) to safely access existingSCP properties
   const [formData, setFormData] = useState({
     item: existingSCP?.item || '',
     object_class: existingSCP?.object_class || 'Euclid',
@@ -17,20 +23,24 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
     references: existingSCP?.references || '',
   });
 
+  // Tracks whether the form is currently submitting to Supabase
   const [loading, setLoading] = useState(false);
+
+  // Stores any validation or API error messages to display to the user
   const [error, setError] = useState(null);
 
-  // Updates form state whenever any field value changes
+  // Generic change handler — updates the matching formData field using the input name attribute
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handles form submission for both Create and Update operations
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevents default browser form submission behaviour
     setLoading(true);
     setError(null);
 
-    // Validates required fields before sending to Supabase
+    // Client-side validation — ensures all required fields are filled before API call
     if (!formData.item || !formData.object_class || !formData.description || !formData.containment) {
       setError('Item, Object Class, Description and Containment are required.');
       setLoading(false);
@@ -40,24 +50,29 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
     let result;
 
     if (existingSCP) {
-      // UPDATE — uses Supabase REST API PATCH method to update existing record
+      // UPDATE operation — uses Supabase REST API PATCH method
+      // Matches the record by its unique Supabase ID and updates all fields
       result = await supabase
         .from('scp')
         .update(formData)
         .eq('id', existingSCP.id);
     } else {
-      // CREATE — uses Supabase REST API POST method to insert new record
+      // CREATE operation — uses Supabase REST API POST method
+      // Inserts a new record into the scp table
       result = await supabase
         .from('scp')
         .insert([formData]);
     }
 
     if (result.error) {
+      // Displays the Supabase error message if the API call fails
       setError(result.error.message);
     } else {
+      // Calls the onSuccess handler in App.jsx which refreshes the SCP list
+      // and shows the success toast notification
       onSuccess(
         existingSCP ? 'SCP entry updated successfully.' : 'New SCP entry added successfully.',
-        existingSCP ? existingSCP.item : 'Home'
+        existingSCP ? existingSCP.item : 'Home' // Navigate back to SCP page or Home after success
       );
     }
 
@@ -65,21 +80,29 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
   };
 
   return (
+    // Full screen overlay that dims the background when the form is open
     <div className="form-overlay">
       <div className="form-container">
+
+        {/* Form header — shows different title depending on Create or Update mode */}
         <div className="form-header">
           <h2 className="form-title">
             {existingSCP ? 'EDIT SCP ENTRY' : 'ADD NEW SCP ENTRY'}
           </h2>
+          {/* Close button calls onCancel which hides the form without saving */}
           <button className="form-close" onClick={onCancel}>✕</button>
         </div>
 
+        {/* Conditionally renders error message if validation or API call fails */}
         {error && <div className="form-error">⚠ {error}</div>}
 
         <form onSubmit={handleSubmit} className="scp-form">
+
+          {/* First row — Item number and Object Class side by side */}
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Item # *</label>
+              {/* Item field is disabled when editing to prevent changing the SCP ID */}
               <input
                 className="form-input"
                 type="text"
@@ -87,11 +110,12 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
                 placeholder="e.g. SCP-999"
                 value={formData.item}
                 onChange={handleChange}
-                disabled={!!existingSCP}
+                disabled={!!existingSCP} // Locks the field when editing an existing SCP
               />
             </div>
             <div className="form-group">
               <label className="form-label">Object Class *</label>
+              {/* Dropdown restricted to the five official SCP classification levels */}
               <select
                 className="form-input"
                 name="object_class"
@@ -107,6 +131,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             </div>
           </div>
 
+          {/* Description textarea — required field */}
           <div className="form-group">
             <label className="form-label">Description *</label>
             <textarea
@@ -119,6 +144,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             />
           </div>
 
+          {/* Containment procedures textarea — required field */}
           <div className="form-group">
             <label className="form-label">Special Containment Procedures *</label>
             <textarea
@@ -131,6 +157,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             />
           </div>
 
+          {/* Second row — Image URL and Tags side by side — both optional */}
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Image URL</label>
@@ -145,6 +172,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             </div>
             <div className="form-group">
               <label className="form-label">Tags</label>
+              {/* Tags stored as comma-separated string e.g. safe,humanoid,sentient */}
               <input
                 className="form-input"
                 type="text"
@@ -156,6 +184,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             </div>
           </div>
 
+          {/* Addendum textarea — optional field */}
           <div className="form-group">
             <label className="form-label">Addendum</label>
             <textarea
@@ -168,6 +197,7 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             />
           </div>
 
+          {/* References textarea — optional field */}
           <div className="form-group">
             <label className="form-label">References</label>
             <textarea
@@ -180,10 +210,12 @@ function SCPForm({ existingSCP, onSuccess, onCancel }) {
             />
           </div>
 
+          {/* Form action buttons — Cancel closes without saving, Submit triggers handleSubmit */}
           <div className="form-actions">
             <button type="button" className="btn-cancel" onClick={onCancel}>
               CANCEL
             </button>
+            {/* Submit button disabled while loading to prevent duplicate submissions */}
             <button type="submit" className="btn-submit" disabled={loading}>
               {loading ? 'SAVING...' : existingSCP ? 'UPDATE ENTRY' : 'ADD ENTRY'}
             </button>
